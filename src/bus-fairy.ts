@@ -1,5 +1,6 @@
 type Fn<T = any> = (options: T) => void
 
+export type Bus = ReturnType<typeof Bus>
 export const Bus = <Events extends Record<string, any>>() => {
   const map = new Map<string, Fn[]>()
 
