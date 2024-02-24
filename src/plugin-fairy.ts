@@ -1,7 +1,3 @@
-type Installable<T extends Fn = Fn> = {
-  install: T
-}
-
 type PluginFairyRawOptions = {
   hooks: string[]
 }
@@ -9,7 +5,7 @@ type PluginFairyRawOptions = {
 export const PluginFairy = <Plugin extends Fn = Fn>(rawOptions: PluginFairyRawOptions) => {
   const options = normalizeOptions(rawOptions)
   const hooks: Record<string, Array<(...args: unknown[]) => void>> = Object.create(null)
-  const installed: Map<Plugin, true> = new Map
+  const installed: Set<Plugin> = new Set
 
   const isHookExist = (name: string) => {
     return Array.isArray(hooks[name])
@@ -45,17 +41,22 @@ export const PluginFairy = <Plugin extends Fn = Fn>(rawOptions: PluginFairyRawOp
     return plugin
   }
 
-  const install = (plugin: Installable<Plugin>, ...args: Parameters<Plugin>) => {
-    const installer = plugin.install
+  const install = (plugin: Plugin, ...args: Parameters<Plugin>) => {
+    if (typeof plugin !== 'function') {
+      console.error(`[plugin-fairy.install]: plugin ${plugin} is not available`)
 
-    if (installed.get(installer)) {
-      console.warn(`[plugin-fairy.install]: plugin ${plugin} has been installed`)
       return
     }
 
-    installed.set(installer, true)
+    if (installed.has(plugin)) {
+      console.warn(`[plugin-fairy.install]: plugin ${plugin} has been installed`)
 
-    const instance = plugin.install(...args)
+      return
+    }
+
+    installed.add(plugin)
+
+    const instance = plugin(...args)
 
     return observe(instance, options.hooks)
   }
